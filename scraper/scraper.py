@@ -1,15 +1,16 @@
-from scraper.driver import go_to_page
-from scraper.parser import get_parsed_html
+from driver import get_driver_with_wait, go_to_page
+from parser import get_parsed_html
 
 
-def get_categories():
+def get_categories(driver, wait):
     # scrape categories:
-    driver = go_to_page("/food/c/27985", wait_element_class="")
+    go_to_page("/food/c/27985", driver=driver, wait=wait, wait_element_class="")
 
     parsed_html = get_parsed_html(driver.page_source)
     # 1. Go to food page (https://www.loblaws.ca/food/c/27985)
     # 2. Grab each category name and url
     # 3. return the category names and urls
+    print(parsed_html)
     return
 
 
@@ -29,7 +30,9 @@ def get_products():
 
 
 def main():
-    categories = get_categories()
+    print("executing...")
+    driver, wait = get_driver_with_wait()
+    categories = get_categories(driver, wait)
     # save them here once db is ready
 
     sub_categories = get_sub_categories()
@@ -37,9 +40,8 @@ def main():
 
     products = get_products()
     # save them here once db is ready
+    driver.quit()
 
 
-# driver.quit()
-
-if __name__ == "main":
+if __name__ == "__main__":
     main()

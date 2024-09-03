@@ -13,8 +13,7 @@ def get_driver_with_wait():
     return driver, wait
 
 
-def go_to_page(path, wait_element_class):
-    driver, wait = get_driver_with_wait()
+def go_to_page(path, driver, wait, wait_element_class):
     driver.get(get_grocer_base_url() + path)
     if wait_element_class:
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, wait_element_class)))
