@@ -1,43 +1,45 @@
-# import dependencies
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-import os
-from dotenv import load_dotenv, dotenv_values 
-
-load_dotenv() 
-
-options = webdriver.FirefoxOptions()
-options.add_argument('-headless')
-driver = webdriver.Firefox(options=options)
-url = os.environ['GROCER_URL_BASE']
-wait = WebDriverWait(driver, timeout=10)
+from scraper.driver import go_to_page
+from scraper.parser import get_parsed_html
 
 
-# make the request
-driver.get(f"{url}classic-potato-chips/p/21241032_EA")
+def get_categories():
+    # scrape categories:
+    driver = go_to_page("/food/c/27985", wait_element_class="")
 
-# ensure page is loaded
-wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'product-details-page-nutrition-info')))
-
-
-soup = BeautifulSoup(driver.page_source, features="html.parser")
-
-
-# # At this point we can parse with BeautifulSoup
-product_details_page = soup.find("div", class_="product-details-page")
-product_details_container = product_details_page.find("div", class_="product-details-page-details")
-brand = product_details_container.find("span", class_="product-name__item--brand")
-name = product_details_container.find("h1", class_="product-name__item--name")
-nutrition_info_container = product_details_page.find("div", class_="product-details-page-nutrition-info")
-ingredients = nutrition_info_container.find("div", class_="product-details-page-info-layout--ingredients")
-
-print(brand.text)
-print(name.text)
-print(ingredients.text)
+    parsed_html = get_parsed_html(driver.page_source)
+    # 1. Go to food page (https://www.loblaws.ca/food/c/27985)
+    # 2. Grab each category name and url
+    # 3. return the category names and urls
+    return
 
 
+def get_sub_categories():
+    # scrape subcategories:
+    # 1. Go to each category
+    # 2. From the Sidebar, Get every sub-category name and its corresponding all page url
+    # 3. return the category names and urls
+    pass
 
-driver.quit()
+
+def get_products():
+    # scrape products:
+    # 1. check the scraped products - if already there, skip otherwise step 2
+    # 2. get product info (id, name, ingredients)
+    pass
+
+
+def main():
+    categories = get_categories()
+    # save them here once db is ready
+
+    sub_categories = get_sub_categories()
+    # save them here once db is ready
+
+    products = get_products()
+    # save them here once db is ready
+
+
+# driver.quit()
+
+if __name__ == "main":
+    main()
