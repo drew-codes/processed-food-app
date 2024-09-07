@@ -48,8 +48,6 @@ def get_sub_categories(categories, driver, wait):
 
     sub_category_tuples = []
 
-    print(f"the container length: {len(sub_categories_containers)}")
-
     for sub_cat_container in sub_categories_containers:
 
         for item in sub_cat_container:
@@ -65,19 +63,20 @@ def get_products(sub_categories, driver, wait):
     # 1. check the scraped products - if already there, skip otherwise step 2
     # 2. get product info (id, name, ingredients)
     product_links = []
-    for sub_cat in sub_categories:
+    for sub_cat in select_count(sub_categories, 0):
         sub_cat_name, url_path = sub_cat
-
         try:
             go_to_page(
-                url_path, driver=driver, wait=wait, wait_element_class="css-1rb8z0p"
+                url_path, driver=driver, wait=wait, wait_element_class="css-1hnz6hu"
             )
 
             parsed_html = get_parsed_html(driver.page_source)
 
-            product_links = parsed_html.select(".css-0 a")
+            product_grid = parsed_html.find(
+                "div", attrs={"data-testid": "product-grid"}
+            )
 
-            # find all product names,urls
+            product_links.extend(product_grid.select(".css-0 a"))
 
         except Exception as error:
             print(f"[Products]: Could not load and/or parse {sub_cat_name} page", error)
@@ -89,10 +88,11 @@ def get_products(sub_categories, driver, wait):
         name = link.find("h3").text
         product_names_with_urls.append((name, link.attrs["href"]))
 
+    return product_names_with_urls
+
 
 def main():
     driver, wait = get_driver_with_wait()
-    # print("Scraping Categories... \n\n\n")
     categories = get_categories(driver, wait)
     # save them here once db is ready
     print("Categories Loaded \n\n\n")
@@ -100,14 +100,18 @@ def main():
     print(categories)
     print("====================================")
     print("\n\n\n")
-    print("Scraping Sub Categories... \n\n\n")
     sub_categories = get_sub_categories(categories, driver=driver, wait=wait)
     print("Sub Categories Loaded \n\n\n")
     print("====================================")
     print(sub_categories)
     print("====================================")
 
-    # products = get_products()
+    products = get_products(sub_categories=sub_categories, driver=driver, wait=wait)
+    print("Products Loaded \n\n\n")
+    print("====================================")
+    print(products)
+    print("====================================")
+
     # save them here once db is ready
     driver.quit()
 
