@@ -1,8 +1,7 @@
 from django.db import models
 
 
-class Categories(models.Model):
-
+class Category(models.Model):
     name = models.CharField(max_length=100)
     vendor_url = models.URLField()
     vendor_id = models.CharField(max_length=10)
@@ -12,7 +11,7 @@ class SubCategory(models.Model):
     name = models.CharField(max_length=100)
     vendor_url = models.URLField()
     vendor_id = models.CharField(max_length=15)
-    category = models.ForeignKey(Categories, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
 
 class Ingredient(models.Model):

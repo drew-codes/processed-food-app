@@ -1,19 +1,27 @@
-from driver import get_driver_with_wait, go_to_page
-from parser import get_parsed_html
-from utils.select_count import select_count
+from data_models.service import save_categories
+from .driver import get_driver_with_wait, go_to_page
+from .parser import get_parsed_html
+from .utils.select_count import select_count
 
 
 def get_categories(driver, wait):
     go_to_page(
-        "/food/c/27985", driver=driver, wait=wait, wait_element_class="link-list-maxH"
+        "/food/c/27985",
+        driver=driver,
+        wait=wait,
+        wait_css_selector="div[data-testid='plp-navigation']",
     )
 
     parsed_html = get_parsed_html(driver.page_source)
 
-    categories_container = parsed_html.find("div", class_="link-list-maxH")
+    categories_container = parsed_html.find(
+        "div", attrs={"data-testid": "plp-navigation"}
+    )
     category_tuples = []
 
-    for elm in select_count(categories_container.select(".chakra-link"), 2):
+    for elm in select_count(
+        categories_container.find_all("a", attrs={"data-testid": "nav-list-link"}), 2
+    ):
         if "See All" in elm.text:
             continue
 
@@ -37,7 +45,7 @@ def get_sub_categories(categories, driver, wait):
             sidebar = parsed_html.find("div", class_="css-1kkjkbw")
 
             sub_categories_containers.append(
-                sidebar.find_all("div", class_="chakra-accordion__item")
+                sidebar.find_all("div", attrs={"data-testid": "accordion-item"})
             )
 
         except Exception as error:
@@ -51,7 +59,7 @@ def get_sub_categories(categories, driver, wait):
     for sub_cat_container in sub_categories_containers:
 
         for item in sub_cat_container:
-            name = item.find("p", class_="chakra-heading")
+            name = item.find("p", attrs={"data-testid": "accordion-title"})
             url = item.find("a", string="See All")
             sub_category_tuples.append((name.text, url.attrs["href"]))
 
@@ -59,9 +67,6 @@ def get_sub_categories(categories, driver, wait):
 
 
 def get_products(sub_categories, driver, wait):
-    # scrape products:
-    # 1. check the scraped products - if already there, skip otherwise step 2
-    # 2. get product info (id, name, ingredients)
     product_links = []
     for sub_cat in select_count(sub_categories, 0):
         sub_cat_name, url_path = sub_cat
@@ -91,9 +96,11 @@ def get_products(sub_categories, driver, wait):
     return product_names_with_urls
 
 
-def main():
+def run_scraper():
     driver, wait = get_driver_with_wait()
     categories = get_categories(driver, wait)
+
+    save_categories(categories)
     # save them here once db is ready
     print("Categories Loaded \n\n\n")
     print("====================================")
@@ -114,7 +121,3 @@ def main():
 
     # save them here once db is ready
     driver.quit()
-
-
-if __name__ == "__main__":
-    main()
