@@ -9,15 +9,21 @@ def get_driver_with_wait():
     options = webdriver.FirefoxOptions()
     options.add_argument("-headless")
     driver = webdriver.Firefox(options=options)
-    wait = WebDriverWait(driver, timeout=10)
+    wait = WebDriverWait(driver, timeout=5)
     return driver, wait
 
 
-def go_to_page(path, driver, wait, wait_element_class=None, wait_css_selector=None):
+def go_to_page_container(path, driver, wait, wait_css_selector, retries=0):
     driver.get(get_grocer_base_url() + path)
-    if wait_element_class:
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, wait_element_class)))
-    elif wait_css_selector:
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, wait_css_selector)))
 
-    return driver
+    try:
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, wait_css_selector)))
+    except Exception as error:
+        if retries:
+            print(
+                f"[Retrying]: Could not find {wait_css_selector}, {retries} attempts left."
+            )
+            go_to_page_container(path, driver, wait, wait_css_selector, retries - 1)
+        else:
+            print(f"[Error]: Could not find {wait_css_selector}.")
+            raise error

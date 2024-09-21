@@ -1,27 +1,30 @@
 from data_models.service import save_categories
-from .driver import get_driver_with_wait, go_to_page
+from .driver import get_driver_with_wait, go_to_page_container
 from .parser import get_parsed_html
 from .utils.select_count import select_count
 
-
 def get_categories(driver, wait):
-    go_to_page(
-        "/food/c/27985",
+    CATEGORY_LINK_SELECTOR = (
+        "div[data-testid='plp-navigation'] a[data-testid='nav-list-link']"
+    )
+
+    FOOD_PAGE_PATH = "/food/c/27985"
+
+    go_to_page_container(
+        FOOD_PAGE_PATH,
         driver=driver,
         wait=wait,
-        wait_css_selector="div[data-testid='plp-navigation']",
+        wait_css_selector=CATEGORY_LINK_SELECTOR,
+        retries=2,
     )
 
     parsed_html = get_parsed_html(driver.page_source)
 
-    categories_container = parsed_html.find(
-        "div", attrs={"data-testid": "plp-navigation"}
-    )
+    links = parsed_html.css.select(CATEGORY_LINK_SELECTOR)
+
     category_tuples = []
 
-    for elm in select_count(
-        categories_container.find_all("a", attrs={"data-testid": "nav-list-link"}), 2
-    ):
+    for elm in select_count(links, 2):
         if "See All" in elm.text:
             continue
 
@@ -34,15 +37,20 @@ def get_sub_categories(categories, driver, wait):
     sub_categories_containers = []
     for cat in categories:
         cat_name, url_path = cat
+        CONTAINER_SELECTOR = "div.css-1kkjkbw"
 
         try:
-            go_to_page(
-                url_path, driver=driver, wait=wait, wait_element_class="css-1kkjkbw"
+            go_to_page_container(
+                url_path,
+                driver=driver,
+                wait=wait,
+                wait_css_selector=CONTAINER_SELECTOR,
+                retries=2,
             )
 
             parsed_html = get_parsed_html(driver.page_source)
 
-            sidebar = parsed_html.find("div", class_="css-1kkjkbw")
+            sidebar = parsed_html.css.select(CONTAINER_SELECTOR)[0]
 
             sub_categories_containers.append(
                 sidebar.find_all("div", attrs={"data-testid": "accordion-item"})
@@ -68,20 +76,22 @@ def get_sub_categories(categories, driver, wait):
 
 def get_products(sub_categories, driver, wait):
     product_links = []
-    for sub_cat in select_count(sub_categories, 0):
+    for sub_cat in select_count(sub_categories, 1):
         sub_cat_name, url_path = sub_cat
+        PRODUCT_ITEM_SELECTOR = "div[data-testid='product-grid'] a.css-1hnz6hu"
+
         try:
-            go_to_page(
-                url_path, driver=driver, wait=wait, wait_element_class="css-1hnz6hu"
+            go_to_page_container(
+                url_path,
+                driver=driver,
+                wait=wait,
+                wait_css_selector=PRODUCT_ITEM_SELECTOR,
+                retries=2,
             )
 
             parsed_html = get_parsed_html(driver.page_source)
 
-            product_grid = parsed_html.find(
-                "div", attrs={"data-testid": "product-grid"}
-            )
-
-            product_links.extend(product_grid.select(".css-0 a"))
+            product_links.extend(parsed_html.css.select(PRODUCT_ITEM_SELECTOR))
 
         except Exception as error:
             print(f"[Products]: Could not load and/or parse {sub_cat_name} page", error)
