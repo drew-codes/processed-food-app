@@ -4,7 +4,7 @@ from django.db import models
 class Category(models.Model):
     name = models.CharField(max_length=100)
     vendor_url = models.URLField()
-    vendor_id = models.CharField(max_length=10)
+    vendor_id = models.CharField(max_length=10, unique=True)
 
 
 class SubCategory(models.Model):

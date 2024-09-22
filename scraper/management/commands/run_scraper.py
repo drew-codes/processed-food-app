@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from scraper.scraper import run_scraper  # Import the function that runs your scraper
+from scraper.scraper import run_scraper
 
 
 class Command(BaseCommand):
@@ -7,5 +7,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write(self.style.SUCCESS("Starting the scraper..."))
-        run_scraper()  # Call your scraper function here
+        run_scraper()
         self.stdout.write(self.style.SUCCESS("Scraper completed successfully."))
