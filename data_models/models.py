@@ -23,4 +23,6 @@ class Product(models.Model):
     brand = models.CharField(max_length=200)
     product_description = models.TextField()
     vendor_id = models.CharField(max_length=15)
+    sub_category = models.ManyToManyField(SubCategory)
+    category = models.ManyToManyField(Category)
     ingredients = models.ManyToManyField(Ingredient)

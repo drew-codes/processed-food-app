@@ -1,4 +1,4 @@
-from data_models.service import save_categories
+from data_models.service import save_categories, save_products, save_sub_categories
 from .driver import get_driver_with_wait, go_to_page_container
 from .parser import get_parsed_html
 from .utils.select_count import select_count
@@ -35,8 +35,9 @@ def get_categories(driver, wait):
 
 def get_sub_categories(categories, driver, wait):
     sub_categories_containers = []
+
     for cat in categories:
-        cat_name, url_path = cat
+        cat_name, url_path = cat.name, cat.vendor_url
         CONTAINER_SELECTOR = "div.css-1kkjkbw"
 
         try:
@@ -53,7 +54,7 @@ def get_sub_categories(categories, driver, wait):
             sidebar = parsed_html.css.select(CONTAINER_SELECTOR)[0]
 
             sub_categories_containers.append(
-                sidebar.find_all("div", attrs={"data-testid": "accordion-item"})
+                (cat, sidebar.find_all("div", attrs={"data-testid": "accordion-item"}))
             )
 
         except Exception as error:
@@ -64,12 +65,12 @@ def get_sub_categories(categories, driver, wait):
 
     sub_category_tuples = []
 
-    for sub_cat_container in sub_categories_containers:
+    for cat, sub_cat_container in sub_categories_containers:
 
         for item in sub_cat_container:
             name = item.find("p", attrs={"data-testid": "accordion-title"})
             url = item.find("a", string="See All")
-            sub_category_tuples.append((name.text, url.attrs["href"]))
+            sub_category_tuples.append((name.text, url.attrs["href"], cat))
 
     return sub_category_tuples
 
@@ -77,7 +78,7 @@ def get_sub_categories(categories, driver, wait):
 def get_products(sub_categories, driver, wait):
     product_links = []
     for sub_cat in select_count(sub_categories, 1):
-        sub_cat_name, url_path = sub_cat
+        sub_cat_name, url_path = sub_cat.name, sub_cat.vendor_url
         PRODUCT_ITEM_SELECTOR = "div[data-testid='product-grid'] a.css-1hnz6hu"
 
         try:
@@ -110,20 +111,28 @@ def run_scraper():
     driver, wait = get_driver_with_wait()
     categories = get_categories(driver, wait)
 
-    save_categories(categories)
+    saved_categories = save_categories(categories)
     # save them here once db is ready
     print("Categories Loaded \n\n\n")
     print("====================================")
     print(categories)
     print("====================================")
     print("\n\n\n")
-    sub_categories = get_sub_categories(categories, driver=driver, wait=wait)
+    sub_categories = get_sub_categories(saved_categories, driver=driver, wait=wait)
+
+    saved_sub_categories = save_sub_categories(sub_categories)
     print("Sub Categories Loaded \n\n\n")
     print("====================================")
     print(sub_categories)
     print("====================================")
 
-    products = get_products(sub_categories=sub_categories, driver=driver, wait=wait)
+    products = get_products(
+        sub_categories=saved_sub_categories, driver=driver, wait=wait
+    )
+
+    # TODO: Get product details and save them
+    # TODO: Get ingredients and save them
+
     print("Products Loaded \n\n\n")
     print("====================================")
     print(products)
