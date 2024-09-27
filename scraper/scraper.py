@@ -89,9 +89,12 @@ def get_product_links(
     url_path,
     driver,
     wait,
-    links=[],
+    links=None,
     current_page=1,
 ):
+    if links is None:
+        links = []
+
     PRODUCT_ITEM_SELECTOR = "div[data-testid='product-grid'] a.css-1hnz6hu"
 
     url_path_with_page = url_path + f"?page={current_page}"
@@ -117,20 +120,27 @@ def get_product_links(
             current_page + 1,
         )
 
+    print("====================================")
+    print(f"Total Products for {url_path}: {len(links)}")
+    print("====================================")
+
     return links
 
 
-def get_product_name_with_url(sub_categories, driver, wait):
-    product_links = []
+def get_product_urls(sub_categories, driver, wait):
+    sub_cat_product_links = []
     for sub_cat in select_count(sub_categories, 1):
         sub_cat_name, url_path = sub_cat.name, sub_cat.vendor_url
 
         try:
-            product_links.extend(
-                get_product_links(
-                    url_path,
-                    driver,
-                    wait,
+            sub_cat_product_links.append(
+                (
+                    sub_cat_name,
+                    get_product_links(
+                        url_path,
+                        driver,
+                        wait,
+                    ),
                 )
             )
 
@@ -138,38 +148,62 @@ def get_product_name_with_url(sub_categories, driver, wait):
             print(f"[Products]: Could not load and/or parse {sub_cat_name}", error)
             continue
 
-    product_names_with_urls = []
+    product_urls = []
 
-    for link in product_links:
-        name = link.find("h3").text
-        product_names_with_urls.append((name, link.attrs["href"]))
+    for link in sub_cat_product_links:
+        sub_cat, links = link
 
-    return product_names_with_urls
+    return product_urls
 
 
-def get_product_details(products, driver, wait):
+def get_product_details(product_links, driver, wait):
     product_details = []
 
-    for product in select_count(products, 1):
-        product_name, url_path = product.name, product.vendor_url
-        PRODUCT_DETAILS_SELECTOR = "div[data-testid='product-details']"
+    for url_path in select_count(product_links, 0):
+        PRODUCT_DETAILS_WAIT_SELECTOR = (
+            "div.product-details-page-info-layout--ingredients"
+        )
 
         try:
             go_to_page_container(
                 url_path,
                 driver=driver,
                 wait=wait,
-                wait_css_selector=PRODUCT_DETAILS_SELECTOR,
+                wait_css_selector=PRODUCT_DETAILS_WAIT_SELECTOR,
                 retries=2,
             )
 
             parsed_html = get_parsed_html(driver.page_source)
 
-            product_details.append(parsed_html.css.select(PRODUCT_DETAILS_SELECTOR))
+            # for reference:
+            # class Product(models.Model):
+            #     name = models.CharField(max_length=200)
+            #     brand = models.CharField(max_length=200)
+            #     product_description = models.TextField()
+            #     vendor_id = models.CharField(max_length=15)
+            #     sub_category = models.ManyToManyField(SubCategory)
+            #     category = models.ManyToManyField(Category)
+            #     ingredients = models.ManyToManyField(Ingredient)
+
+            name = parsed_html.css.select("h1.product-name__item--name")[0].text
+            brand = parsed_html.css.select("span.product-name__item--brand")[0].text
+            product_description = parsed_html.css.select(
+                "div.product-description-text__text"
+            )[0].text
+
+            product_details.append(
+                {
+                    "name": name,
+                    "brand": brand,
+                    "product_description": product_description,
+                    "vendor_id": url_path.split("?")[0].split("/")[-1],
+                    "vendor_url": url_path,
+                }
+            )
 
         except Exception as error:
             print(
-                f"[Product Details]: Could not load and/or parse {product_name} page",
+                f"[Product Details]: Could not load and/or parse {url_path}",
                 error,
             )
             continue
@@ -196,16 +230,15 @@ def run_scraper():
     print(sub_categories)
     print("====================================")
 
-    products_names_with_url = get_product_name_with_url(
+    product_urls = get_product_urls(
         sub_categories=saved_sub_categories, driver=driver, wait=wait
     )
 
-    # TODO: Get product details and save them
-    # TODO: Get ingredients and save them
+    product_details = get_product_details(product_urls, driver=driver, wait=wait)
 
-    print("Products Loaded \n\n\n")
+    print("Product Loaded \n\n\n")
     print("====================================")
-    print(products_names_with_url)
+    print(product_details)
     print("====================================")
 
     # save them here once db is ready
