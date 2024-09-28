@@ -130,12 +130,21 @@ def get_product_links(
 def get_product_urls(sub_categories, driver, wait):
     sub_cat_product_links = []
     for sub_cat in select_count(sub_categories, 1):
-        sub_cat_name, url_path = sub_cat.name, sub_cat.vendor_url
+        (
+            sub_cat_name,
+            cat,
+            url_path,
+        ) = (
+            sub_cat.name,
+            sub_cat.category,
+            sub_cat.vendor_url,
+        )
 
         try:
             sub_cat_product_links.append(
                 (
-                    sub_cat_name,
+                    sub_cat,
+                    cat,
                     get_product_links(
                         url_path,
                         driver,
@@ -151,7 +160,10 @@ def get_product_urls(sub_categories, driver, wait):
     product_urls = []
 
     for link in sub_cat_product_links:
-        sub_cat, links = link
+        sub_cat, cat, links = link
+
+        for item in links:
+            product_urls.append((item.attrs["href"], sub_cat, cat))
 
     return product_urls
 
@@ -159,7 +171,7 @@ def get_product_urls(sub_categories, driver, wait):
 def get_product_details(product_links, driver, wait):
     product_details = []
 
-    for url_path in select_count(product_links, 0):
+    for url_path, sub_cat, cat in select_count(product_links, 0):
         PRODUCT_DETAILS_WAIT_SELECTOR = (
             "div.product-details-page-info-layout--ingredients"
         )
@@ -198,6 +210,8 @@ def get_product_details(product_links, driver, wait):
                     "product_description": product_description,
                     "vendor_id": url_path.split("?")[0].split("/")[-1],
                     "vendor_url": url_path,
+                    "sub_category": sub_cat,
+                    "category": cat,
                 }
             )
 
