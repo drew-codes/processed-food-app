@@ -26,3 +26,4 @@ class Product(models.Model):
     sub_category = models.ManyToManyField(SubCategory)
     category = models.ManyToManyField(Category)
     ingredients = models.ManyToManyField(Ingredient)
+    ingredients_text = models.TextField()

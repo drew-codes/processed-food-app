@@ -10,8 +10,12 @@ def save_categories(categories):
         try:
             vendor_id = extract_vendor_id(url_path)
 
-            category, _ = Category.objects.get_or_create(
-                name=category_name, vendor_url=url_path, vendor_id=vendor_id
+            category, _ = Category.objects.update_or_create(
+                vendor_id=vendor_id,
+                defaults={
+                    "name": category_name,
+                    "vendor_url": url_path,
+                },
             )
 
             results.append(category)
@@ -29,11 +33,13 @@ def save_sub_categories(sub_categories):
 
         try:
             vendor_id = extract_vendor_id(url_path)
-            sub_category, _ = SubCategory.objects.get_or_create(
-                name=sub_category_name,
-                vendor_url=url_path,
+            sub_category, _ = SubCategory.objects.update_or_create(
                 vendor_id=vendor_id,
-                category=category,
+                defaults={
+                    "name": sub_category_name,
+                    "vendor_url": url_path,
+                    "category": category,
+                },
             )
 
             results.append(sub_category)

@@ -187,16 +187,6 @@ def get_product_details(product_links, driver, wait):
 
             parsed_html = get_parsed_html(driver.page_source)
 
-            # for reference:
-            # class Product(models.Model):
-            #     name = models.CharField(max_length=200)
-            #     brand = models.CharField(max_length=200)
-            #     product_description = models.TextField()
-            #     vendor_id = models.CharField(max_length=15)
-            #     sub_category = models.ManyToManyField(SubCategory)
-            #     category = models.ManyToManyField(Category)
-            #     ingredients = models.ManyToManyField(Ingredient)
-
             name = parsed_html.css.select("h1.product-name__item--name")[0].text
             brand = parsed_html.css.select("span.product-name__item--brand")[0].text
             product_description = parsed_html.css.select(
@@ -249,6 +239,8 @@ def run_scraper():
     )
 
     product_details = get_product_details(product_urls, driver=driver, wait=wait)
+
+    # save_products(product_details)
 
     print("Product Loaded \n\n\n")
     print("====================================")
