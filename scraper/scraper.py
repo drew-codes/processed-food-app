@@ -1,4 +1,4 @@
-from data_models.service import save_categories, save_sub_categories
+from data_models.service import save_categories, save_products, save_sub_categories
 from .driver import get_driver_with_wait, go_to_page_container
 from .parser import get_parsed_html
 from .utils.select_count import select_count
@@ -192,6 +192,9 @@ def get_product_details(product_links, driver, wait):
             product_description = parsed_html.css.select(
                 "div.product-description-text__text"
             )[0].text
+            ingredients = parsed_html.css.select(
+                "div.product-details-page-info-layout--ingredients div.product-details-page-info-layout-content"
+            )[0].text
 
             product_details.append(
                 {
@@ -199,9 +202,9 @@ def get_product_details(product_links, driver, wait):
                     "brand": brand,
                     "product_description": product_description,
                     "vendor_id": url_path.split("?")[0].split("/")[-1],
-                    "vendor_url": url_path,
                     "sub_category": sub_cat,
                     "category": cat,
+                    "ingredients_text": ingredients,
                 }
             )
 
@@ -240,12 +243,11 @@ def run_scraper():
 
     product_details = get_product_details(product_urls, driver=driver, wait=wait)
 
-    # save_products(product_details)
-
     print("Product Loaded \n\n\n")
     print("====================================")
     print(product_details)
     print("====================================")
 
+    save_products(product_details)
     # save them here once db is ready
     driver.quit()
