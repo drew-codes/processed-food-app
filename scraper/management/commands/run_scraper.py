@@ -1,3 +1,4 @@
+from time import time
 from django.core.management.base import BaseCommand
 from scraper.scraper import run_scraper
 
@@ -7,5 +8,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write(self.style.SUCCESS("Starting the scraper..."))
-        run_scraper()
-        self.stdout.write(self.style.SUCCESS("Scraper completed successfully."))
+        start = time()
+        run_scraper(self.stdout, self.style)
+        duration = time() - start
+        self.stdout.write(
+            self.style.SUCCESS(f"Scraper completed successfully in {duration} seconds.")
+        )

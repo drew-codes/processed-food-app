@@ -120,16 +120,23 @@ def get_product_links(
             current_page + 1,
         )
 
-    print("====================================")
-    print(f"Total Products for {url_path}: {len(links)}")
-    print("====================================")
-
     return links
 
 
 def get_product_urls(sub_categories, driver, wait):
+    excluded_vendor_ids = [
+        "28169",
+        "28166",
+        "28167",
+        "28168",
+        "28205",
+    ]
     sub_cat_product_links = []
-    for sub_cat in select_count(sub_categories, 1):
+    for sub_cat in select_count(sub_categories, 8):
+
+        if sub_cat.vendor_id in excluded_vendor_ids:
+            continue
+
         (
             sub_cat_name,
             cat,
@@ -171,7 +178,7 @@ def get_product_urls(sub_categories, driver, wait):
 def get_product_details(product_links, driver, wait):
     product_details = []
 
-    for url_path, sub_cat, cat in select_count(product_links, 0):
+    for url_path, sub_cat, cat in select_count(product_links, 30):
         PRODUCT_DETAILS_WAIT_SELECTOR = (
             "div.product-details-page-info-layout--ingredients"
         )
@@ -218,36 +225,27 @@ def get_product_details(product_links, driver, wait):
     return product_details
 
 
-def run_scraper():
+def run_scraper(stdout, style):
     driver, wait = get_driver_with_wait()
-    categories = get_categories(driver, wait)
 
-    saved_categories = save_categories(categories)
-    # save them here once db is ready
-    print("Categories Loaded \n\n\n")
-    print("====================================")
-    print(categories)
-    print("====================================")
-    print("\n\n\n")
-    sub_categories = get_sub_categories(saved_categories, driver=driver, wait=wait)
+    saved_categories = save_categories(get_categories(driver, wait))
 
-    saved_sub_categories = save_sub_categories(sub_categories)
-    print("Sub Categories Loaded \n\n\n")
-    print("====================================")
-    print(sub_categories)
-    print("====================================")
+    stdout.write(style.SUCCESS(f"Saved {len(saved_categories)} categories"))
+
+    saved_sub_categories = save_sub_categories(
+        get_sub_categories(saved_categories, driver=driver, wait=wait)
+    )
+
+    stdout.write(style.SUCCESS(f"Saved {len(saved_sub_categories)} sub categories"))
 
     product_urls = get_product_urls(
         sub_categories=saved_sub_categories, driver=driver, wait=wait
     )
 
-    product_details = get_product_details(product_urls, driver=driver, wait=wait)
+    products_saved = save_products(
+        get_product_details(product_urls, driver=driver, wait=wait)
+    )
 
-    print("Product Loaded \n\n\n")
-    print("====================================")
-    print(product_details)
-    print("====================================")
+    stdout.write(style.SUCCESS(f"Saved {products_saved} products"))
 
-    save_products(product_details)
-    # save them here once db is ready
     driver.quit()

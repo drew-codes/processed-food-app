@@ -50,6 +50,7 @@ def save_sub_categories(sub_categories):
 
 
 def save_products(product_details):
+    count = 0
     for detail in product_details:
 
         ingredients = extract_ingredients(detail["ingredients_text"])
@@ -74,19 +75,38 @@ def save_products(product_details):
             product.ingredients.add(ingredient)
 
         product.save()
+        count += 1
+
+    return count
 
 
 def extract_ingredients(ingredients_text):
     ingredients = ingredients_text.strip().lower()
 
-    ingredients = ingredients.replace(".", "")
+    ingredients = re.sub(r"\b\w+:\s*", "", ingredients)
+
+    ingredients = ingredients.replace(".", ",")
 
     ingredients = re.split(r"[(),]", ingredients)
 
-    ingredients = [ingredient.strip() for ingredient in ingredients]
+    ingredients = [
+        ingredient.strip() for ingredient in ingredients if ingredient.strip()
+    ]
 
-    ingredients = [i for i in ingredients if "may contain" not in i]
+    exclusions = [
+        "may contain",
+        "tree nuts",
+        "and/or other allergens",
+        "allergen alert",
+        "we cannot guarantee",
+        "contact with",
+    ]
 
+    ingredients = [
+        ingredient
+        for ingredient in ingredients
+        if not any(phrase in ingredient for phrase in exclusions)
+    ]
     return ingredients
 
 
