@@ -2,3 +2,5 @@
 .env
 error_output.log
 __pycache__
+headers.json
+payload-data.json
